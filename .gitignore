@@ -1,0 +1,18 @@
+# Game binaries and local proprietary build references
+*.dll
+*.exe
+*.pdb
+*.zip
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+[Dd]ebug/
+[Rr]elease/
+# Local save/config files
+*.sav
+*.ini
+UserData/
+MelonLoader/
+logs/

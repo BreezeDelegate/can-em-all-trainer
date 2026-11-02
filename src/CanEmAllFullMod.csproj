@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup>
+  <TargetFramework>net6.0</TargetFramework>
+  <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  <ImplicitUsings>disable</ImplicitUsings>
+  <Nullable>disable</Nullable>
+  <AssemblyName>CanEmAllFullMod</AssemblyName>
+  <DefineConstants>FULL_GAME</DefineConstants>
+  <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+</PropertyGroup>
+<ItemGroup>
+  <Compile Include="TrainerMod.cs" />
+  <Compile Include="TrainerSettings.cs" />
+  <Compile Include="NativePanel.cs" />
+  <Compile Include="NativeActions.cs" />
+  <Compile Include="AdminPanel.cs" />
+  <Reference Include="Assembly-CSharp"><HintPath>../Main-Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="MelonLoader"><HintPath>../canem-ml.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="0Harmony"><HintPath>../canem-harmony.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="UnityEngine.AudioModule"><HintPath>../canem-audio.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="UnityEngine.CoreModule"><HintPath>../canem-core.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="UnityEngine.InputLegacyModule"><HintPath>../canem-input.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="Il2CppSystem.Core"><HintPath>../canem-systemcore.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="Il2Cppmscorlib"><HintPath>../canem-mscorlib.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="UnityEngine.TextRenderingModule"><HintPath>../canem-tm.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="Il2CppInterop.Runtime"><HintPath>../canem-runtime.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="UnityEngine.UI"><HintPath>../canem-ui.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="UnityEngine.UIModule"><HintPath>../canem-uimodule.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="Unity.TextMeshPro"><HintPath>../canem-tmp.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="UnityEngine.PhysicsModule"><HintPath>../canem-physics.dll</HintPath><Private>false</Private></Reference>
+</ItemGroup>
+</Project>
