@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.3.0 — 2026-11-02
+
+- English translations for the nine menu tabs, controls, confirmations, hints and status messages.
+- One bilingual DLL with instant EN / FR selection beside Close; new installations default to English.
+- Language preference stored in the existing configuration; French remains available.
+- Added language unit tests and native in-game localization smoke coverage.
+- No changes to gameplay or upgrade mechanics.
+
 ## 7.2.0 — 2026-11-02
 
 Initial public GitHub release of the full-game trainer.

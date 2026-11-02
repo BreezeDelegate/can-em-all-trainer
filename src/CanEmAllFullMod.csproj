@@ -15,6 +15,7 @@
   <Compile Include="NativePanel.cs" />
   <Compile Include="NativeActions.cs" />
   <Compile Include="AdminPanel.cs" />
+  <Compile Include="Localization.cs" />
   <Reference Include="Assembly-CSharp"><HintPath>../Main-Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
   <Reference Include="MelonLoader"><HintPath>../canem-ml.dll</HintPath><Private>false</Private></Reference>
   <Reference Include="0Harmony"><HintPath>../canem-harmony.dll</HintPath><Private>false</Private></Reference>

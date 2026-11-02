@@ -9,10 +9,10 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 #if FULL_GAME
-[assembly: MelonInfo(typeof(CanEmAllMod.TrainerMod), "Can 'Em All - Full Admin", "7.2.0", "BreezeDelegate")]
+[assembly: MelonInfo(typeof(CanEmAllMod.TrainerMod), "Can 'Em All - Full Admin", "7.3.0", "BreezeDelegate")]
 [assembly: MelonGame("LuisDev", "Can 'Em All")]
 #else
-[assembly: MelonInfo(typeof(CanEmAllMod.TrainerMod), "Can 'Em All - Demo Admin", "7.2.0", "BreezeDelegate")]
+[assembly: MelonInfo(typeof(CanEmAllMod.TrainerMod), "Can 'Em All - Demo Admin", "7.3.0", "BreezeDelegate")]
 [assembly: MelonGame("LuisDev", "Can 'Em All Demo")]
 #endif
 
@@ -94,7 +94,7 @@ namespace CanEmAllMod
                     }
                     catch (Exception ex) { MelonLogger.Warning("CanPlayerInput gate: " + ex.GetBaseException().Message); }
                 }
-                MelonLogger.Msg("Trainer v7.2 loaded. Player input patches: " + patched + ". ²: menu.");
+                MelonLogger.Msg("Trainer v7.3 loaded. Player input patches: " + patched + ". ²: menu.");
             }
             catch (Exception ex) { MelonLogger.Error("Input patches unavailable: " + ex); }
         }

@@ -1,6 +1,6 @@
 # Building from source
 
-The published [Release ZIP](https://github.com/BreezeDelegate/can-em-all-trainer/releases/tag/v7.2.0) is the easiest way to install the trainer. This repository also contains the C# source under `src/` for inspection and local builds.
+The published [Release ZIP](https://github.com/BreezeDelegate/can-em-all-trainer/releases/tag/v7.3.0) is the easiest way to install the trainer. This repository also contains the C# source under `src/` for inspection and local builds.
 
 The project targets **.NET 6** with MelonLoader 0.7.3 and Unity IL2CPP wrappers from the **full** installation of Can 'Em All.
 
@@ -46,3 +46,7 @@ We intentionally do not configure GitHub Actions for builds: the original game d
 ## Licensing
 
 Source is published for review. There is currently no explicit open-source license. All third-party game assets and code belong to their respective owners; this repository does not redistribute them.
+
+## Localization
+
+The src/Localization.cs dictionary supplies English labels for the native Unity menu. French labels remain available. Select EN or FR in the header. The choice is saved as Language=en or Language=fr in the existing UserData/CanEmAllTrainer.ini preferences file. New installations default to English. Run dotnet run --project tests/LocalizationTests.csproj to validate translation logic without proprietary game assemblies.

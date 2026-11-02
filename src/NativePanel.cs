@@ -40,7 +40,7 @@ namespace CanEmAllMod
         private static TMP_FontAsset gameFont;
         private static readonly Dictionary<string,Sprite> gameSprites=
             new Dictionary<string,Sprite>(StringComparer.OrdinalIgnoreCase);
-        private static TextMeshProUGUI statusLabel, moneyLabel;
+        private static TextMeshProUGUI statusLabel, moneyLabel, subtitleLabel, closeCaption;
         // Preserve managed delegates for the entire lifetime of the native panel.
         // Unity's IL2CPP UnityEvent may otherwise call a collected delegate.
         private static readonly List<object> callbackRoots=new List<object>();
@@ -49,7 +49,7 @@ namespace CanEmAllMod
         private static readonly List<Button> navigationButtons=new List<Button>();
         private static readonly List<Image> navigationImages=new List<Image>();
         private static readonly List<TextMeshProUGUI> navigationLabels=new List<TextMeshProUGUI>();
-        private static bool constructed,open,needsBuild,moneyEditing,smokeMode,buildingPage,argsChecked;
+        private static bool constructed,open,needsBuild,moneyEditing,smokeMode,buildingPage,argsChecked,localeSmokeTested;
         private static float retireCallbacksAt;
         private static int smokeLimit=9;
         private static int boundScene=int.MinValue,tab,enemyIndex,weaponIndex,page;
@@ -69,6 +69,7 @@ namespace CanEmAllMod
                 {
                     if(arg=="-trainer-ui-smoke"){smokeMode=true;smokeLimit=9;break;}
                     if(arg=="-trainer-ui-stress"){smokeMode=true;smokeLimit=180;break;}
+                    if(arg=="-trainer-ui-locales"){smokeMode=true;smokeLimit=18;break;}
                 }
             }
             bool wantsVisible=visible||smokeMode&&smokeStep<=smokeLimit;
@@ -91,13 +92,30 @@ namespace CanEmAllMod
                 if(root.activeSelf!=open)root.SetActive(open);
                 if(!open)return;
                 if(EventSystem.current!=null && !EventSystem.current.enabled)EventSystem.current.enabled=true;
+                if(!localeSmokeTested && Array.IndexOf(Environment.GetCommandLineArgs(),"-trainer-ui-locales")>=0)
+                {
+                    localeSmokeTested=true;
+                    try
+                    {
+                        SetLanguage("fr");
+                        if(navigationLabels[0].text!="JOUEUR")MelonLogger.Error("NATIVE_LOCALE_FR_MISMATCH");
+                        MelonLogger.Msg("NATIVE_LOCALE_FR="+navigationLabels[0].text);
+                        SetLanguage("en");
+                        if(navigationLabels[0].text!="PLAYER")MelonLogger.Error("NATIVE_LOCALE_EN_MISMATCH");
+                        MelonLogger.Msg("NATIVE_LOCALE_EN="+navigationLabels[0].text);
+                        SetLanguage("fr");
+                        SetLanguage("en");
+                        MelonLogger.Msg("NATIVE_LOCALE_SWITCHES_OK=4");
+                    }
+                    catch(Exception ex){MelonLogger.Error("NATIVE_LOCALE_TEST_FAILED "+ex);}
+                }
                 if(needsBuild)BuildPage();
                 if(moneyEditing)ReadMoneyKeys();
                 if(Time.realtimeSinceStartup>nextRefresh)
                 {
                     nextRefresh=Time.realtimeSinceStartup+.5f;
-                    if(statusLabel!=null)statusLabel.text=string.IsNullOrEmpty(status)
-                        ?"TOUCHE ²  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT":status;
+                    if(statusLabel!=null)statusLabel.text=Localization.Tr(string.IsNullOrEmpty(status)
+                        ?"TOUCHE ²  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT":status);
                 }
                 if(retiredCallbacks.Count>0 && Time.realtimeSinceStartup>=retireCallbacksAt)
                     retiredCallbacks.Clear();
@@ -143,7 +161,7 @@ namespace CanEmAllMod
             if(root!=null){root.SetActive(false);UnityEngine.Object.Destroy(root);}
             if(createdEventSystem!=null)UnityEngine.Object.Destroy(createdEventSystem);
             root=null;content=null;createdEventSystem=null;
-            statusLabel=null;moneyLabel=null;
+            statusLabel=null;moneyLabel=null;subtitleLabel=null;closeCaption=null;
             gameFont=null;
             gameSprites.Clear();
             callbackRoots.Clear();
@@ -152,6 +170,8 @@ namespace CanEmAllMod
             navigationButtons.Clear();
             navigationImages.Clear();
             navigationLabels.Clear();
+            languageButtonBackgrounds.Clear();
+            languageButtonLabels.Clear();
             buildingPage=false;
             boundScene=int.MinValue;
             needsBuild=false;
@@ -250,7 +270,7 @@ namespace CanEmAllMod
             var go=RectObject(name,parent,centered?x:x+w*.5f,y,w,h);
             var label=Add<TextMeshProUGUI>(go);
             label.font=gameFont;
-            label.text=text;
+            label.text=Localization.Tr(text);
             label.fontSize=size;
             label.fontStyle=strong?FontStyles.Bold:FontStyles.Normal;
             label.color=color??White;
@@ -274,11 +294,17 @@ namespace CanEmAllMod
             if(!string.IsNullOrEmpty(text))
             {
                 caption=Text(image.transform,name+" label",text,0,0,w-10,h-4,13,true,light?Black:White,true);
+                if(name=="Close")closeCaption=caption;
                 caption.enableAutoSizing=true;
                 caption.fontSizeMin=10;
                 caption.fontSizeMax=13;
                 caption.enableWordWrapping=false;
                 caption.overflowMode=TextOverflowModes.Ellipsis;
+            }
+            if(name=="Locale EN"||name=="Locale FR")
+            {
+                languageButtonBackgrounds.Add(image);
+                languageButtonLabels.Add(caption);
             }
             if(name.StartsWith("Tab ",StringComparison.Ordinal))
             {
@@ -350,7 +376,13 @@ namespace CanEmAllMod
                 // Removed: "main_menu2" showed stray orange strokes over tabs.
                 GameIcon(window.transform,"Game emblem","PABLO_hope",-449,285,46,46);
                 Text(window.transform,"Title","Can 'Em All",-411,289,380,48,26,true);
-                Text(window.transform,"Subtitle","TRAINER  /  VERSION COMPLETE",-410,259,420,23,12,false,TextGray);
+                subtitleLabel=Text(window.transform,"Subtitle","TRAINER  /  VERSION COMPLETE",-410,259,420,23,12,false,TextGray);
+                ActionButton(window.transform,"Locale EN","EN",250,288,50,35,()=>{
+                    SetLanguage("en");
+                },Localization.English);
+                ActionButton(window.transform,"Locale FR","FR",316,288,50,35,()=>{
+                    SetLanguage("fr");
+                },!Localization.English);
                 ActionButton(window.transform,"Close","FERMER",421,288,115,37,()=>closeMenu?.Invoke());
                 Panel(window.transform,"Divider",0,198,968,1,Hover);
                 for(int i=0;i<Tabs.Length;i++)
@@ -391,8 +423,33 @@ namespace CanEmAllMod
         private static void Status(string msg)
         {
             status=msg;
-            if(statusLabel!=null)statusLabel.text=string.IsNullOrEmpty(msg)
-                ?"TOUCHE ²  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT":msg;
+            if(statusLabel!=null)statusLabel.text=Localization.Tr(string.IsNullOrEmpty(msg)
+                ?"TOUCHE ²  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT":msg);
+        }
+        private static void SetLanguage(string language)
+        {
+            if(Localization.Language==language)return;
+            Localization.Set(language);
+            TrainerSettings.Save();
+            for(int i=0;i<navigationLabels.Count;i++)
+                if(navigationLabels[i]!=null)navigationLabels[i].text=Localization.Tr(Tabs[i]);
+            if(subtitleLabel!=null)subtitleLabel.text=Localization.Tr("TRAINER  /  VERSION COMPLETE");
+            if(closeCaption!=null)closeCaption.text=Localization.Tr("FERMER");
+            // Refresh selected-state highlights without rebuilding the Canvas.
+            UpdateLanguageButtons();
+            Status(status);
+            needsBuild=true;
+        }
+        private static readonly List<Image> languageButtonBackgrounds=new List<Image>();
+        private static readonly List<TextMeshProUGUI> languageButtonLabels=new List<TextMeshProUGUI>();
+        private static void UpdateLanguageButtons()
+        {
+            for(int i=0;i<languageButtonBackgrounds.Count && i<languageButtonLabels.Count;i++)
+            {
+                bool selected=i==0?Localization.English:!Localization.English;
+                if(languageButtonBackgrounds[i]!=null)languageButtonBackgrounds[i].color=selected?White:Surface;
+                if(languageButtonLabels[i]!=null)languageButtonLabels[i].color=selected?Black:White;
+            }
         }
         private static void Head(string title,string sub="")
         {

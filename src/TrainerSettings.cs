@@ -72,6 +72,7 @@ namespace CanEmAllMod
                         if(split<=0)continue;
                         v[line.Substring(0,split)]=line.Substring(split+1);
                     }
+                    Localization.Set(v.TryGetValue("Language",out string chosenLanguage)?chosenLanguage:"en");
                     AdminPanel.Speed=ParseFloat(v,"Speed",1,1,5);
                     AdminPanel.Jump=ParseFloat(v,"Jump",1,1,5);
                     AdminPanel.Damage=ParseFloat(v,"Damage",1,1,10);
@@ -128,6 +129,7 @@ namespace CanEmAllMod
         {
             var b=new StringBuilder();
             b.AppendLine("# CanEmAll Trainer - managed settings, full game");
+            b.AppendLine("Language="+Localization.Language);
             b.AppendLine("Speed="+AdminPanel.Speed.ToString("R",Invariant));
             b.AppendLine("Jump="+AdminPanel.Jump.ToString("R",Invariant));
             b.AppendLine("Damage="+AdminPanel.Damage.ToString("R",Invariant));
