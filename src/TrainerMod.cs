@@ -9,10 +9,10 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 #if FULL_GAME
-[assembly: MelonInfo(typeof(CanEmAllMod.TrainerMod), "Can 'Em All - Full Admin", "7.3.0", "BreezeDelegate")]
+[assembly: MelonInfo(typeof(CanEmAllMod.TrainerMod), "Can 'Em All - Full Admin", "7.4.2", "BreezeDelegate")]
 [assembly: MelonGame("LuisDev", "Can 'Em All")]
 #else
-[assembly: MelonInfo(typeof(CanEmAllMod.TrainerMod), "Can 'Em All - Demo Admin", "7.3.0", "BreezeDelegate")]
+[assembly: MelonInfo(typeof(CanEmAllMod.TrainerMod), "Can 'Em All - Demo Admin", "7.4.2", "BreezeDelegate")]
 [assembly: MelonGame("LuisDev", "Can 'Em All Demo")]
 #endif
 
@@ -29,6 +29,7 @@ namespace CanEmAllMod
         private static bool menuOpen;
 
         private bool prevKey;
+        private bool prevF8;
         private bool cursorSaved;
         private CursorLockMode originalCursorLock;
         private bool originalCursorVisible;
@@ -94,7 +95,7 @@ namespace CanEmAllMod
                     }
                     catch (Exception ex) { MelonLogger.Warning("CanPlayerInput gate: " + ex.GetBaseException().Message); }
                 }
-                MelonLogger.Msg("Trainer v7.3 loaded. Player input patches: " + patched + ". ²: menu.");
+                MelonLogger.Msg("Trainer v7.4.2 loaded. Player input patches: " + patched + ". F8 or the key below Esc: menu.");
             }
             catch (Exception ex) { MelonLogger.Error("Input patches unavailable: " + ex); }
         }
@@ -200,8 +201,10 @@ namespace CanEmAllMod
         public override void OnUpdate()
         {
             bool pressed = (GetAsyncKeyState(menuKey) & 0x8000) != 0;
-            if (pressed && !prevKey) Toggle();
+            bool pressedF8 = (GetAsyncKeyState(0x77) & 0x8000) != 0; // VK_F8
+            if ((pressed && !prevKey) || (pressedF8 && !prevF8)) Toggle();
             prevKey = pressed;
+            prevF8 = pressedF8;
             ProbeManagers();
 #if !FULL_GAME
             DemoUnlocks.Update();

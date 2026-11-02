@@ -21,6 +21,11 @@ internal static class Program
         Assert("English research remaining",Localization.Tr("4 achats; 3 ameliorations encore verrouillees (Master exclu).")=="4 purchases; 3 upgrades still locked (final upgrade excluded).");
         Assert("English ammo",Localization.Tr("1000 munitions ajoutees.")=="1000 ammo added.");
         Assert("English label casino",Localization.Tr("Machine indisponible dans cette scene.")=="Slot machine unavailable in this scene.");
+        Assert("factory unlock label",Localization.Tr("RECEVOIR OFFRE USINE")=="SEND FACTORY OFFER");
+        Assert("casino email label",Localization.Tr("RECEVOIR E-MAIL CASINO")=="SEND CASINO EMAIL");
+        Assert("100k achievement label",Localization.Tr("100 000 ENFANTS")=="SET 100,000 FED");
+        Assert("save copy",Localization.Tr("Statistiques et succes de progression.")=="Statistics and progression achievements.");
+        Assert("almost win clear",Localization.Tr("Presque gagné (perdant)")=="Almost win (still lose)");
         Localization.Set("fr");
         Assert("French menu",Localization.Tr("JOUEUR")=="JOUEUR" && Localization.Tr("ARMES")=="ARMES");
         Assert("French dynamic",Localization.Tr("Creature creee : Water")=="Creature creee : Water");

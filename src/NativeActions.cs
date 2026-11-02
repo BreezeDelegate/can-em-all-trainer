@@ -401,5 +401,61 @@ namespace CanEmAllMod
                 catch(Exception ex){MelonLogger.Error("Restore money: "+ex);}
             }
         }
+
+        private static string DeliverEmail(MailId id, string feature)
+        {
+            try
+            {
+                var mm=MailManager.Instance;
+                var sm=SaveManager.Instance;
+                if(mm==null||sm==null||sm.CurrentSaveData==null)
+                    return Localization.English?"Load a game first.":"Chargez une partie.";
+                if(mm.HasAccepted(id))
+                    return Localization.English?feature+" already unlocked.":feature+" deja debloque.";
+                if(mm.HasReceived(id))
+                    return Localization.English?"Email already received. Open it and click ACCEPT.":"E-mail deja recu. Ouvrez-le et cliquez ACCEPTER.";
+                mm.Receive(id);
+                sm.Save();
+                MelonLogger.Msg("Native unlock mail delivered: "+id);
+                return Localization.English?feature+" email delivered. Open Mail and click ACCEPT.":"E-mail "+feature+" recu. Ouvrez les mails et cliquez ACCEPTER.";
+            }
+            catch(Exception ex)
+            {
+                MelonLogger.Error("DeliverEmail "+id+": "+ex);
+                return Localization.English?"Email delivery failed (see log).":"Envoi impossible (voir journal).";
+            }
+        }
+        internal static string SendCasinoEmail()
+        {
+            return DeliverEmail(MailId.FeelingLucky,"Casino");
+        }
+        internal static string SendFactoryOffer()
+        {
+            return DeliverEmail(MailId.AnOfferYouCantRefuse,Localization.English?"Factory sale":"Vente de l'usine");
+        }
+        internal static string SetChildrenFed100000()
+        {
+            try
+            {
+                var sm=SaveManager.Instance;
+                var d=sm!=null?sm.CurrentSaveData:null;
+                if(d==null||d.lifetimeStats==null)
+                    return Localization.English?"Load a game first.":"Chargez une partie.";
+                if(d.totalCans<100000L)d.totalCans=100000L;
+                if(d.lifetimeStats.totalCans<100000L)d.lifetimeStats.totalCans=100000L;
+                SteamManager.UnlockProgress(100000);
+                var gm=GameManager.Instance;
+                if(gm!=null)gm.UpdateScreenText();
+                sm.Save();
+                MelonLogger.Msg("100,000 fed recorded; native Steam achievement requested.");
+                return Localization.English?"100,000 fed recorded. Steam unlock requested.":"100 000 enregistres. Succes Steam demande.";
+            }
+            catch(Exception ex)
+            {
+                MelonLogger.Error("SetChildrenFed100000: "+ex);
+                return Localization.English?"Counter update failed (see log).":"Mise a jour impossible (voir journal).";
+            }
+        }
+
     }
 }

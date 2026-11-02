@@ -13,6 +13,8 @@
   <Compile Include="TrainerMod.cs" />
   <Compile Include="TrainerSettings.cs" />
   <Compile Include="NativePanel.cs" />
+  <EmbeddedResource Include="Assets/flag-en.rgba" LogicalName="CanEmAllMod.flag-en.rgba" />
+  <EmbeddedResource Include="Assets/flag-fr.rgba" LogicalName="CanEmAllMod.flag-fr.rgba" />
   <Compile Include="NativeActions.cs" />
   <Compile Include="AdminPanel.cs" />
   <Compile Include="Localization.cs" />

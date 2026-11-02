@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.IO;
+using System.Reflection;
 using Il2Cpp;
 using Il2CppInterop.Runtime;
 using Il2CppTMPro;
@@ -40,6 +42,7 @@ namespace CanEmAllMod
         private static TMP_FontAsset gameFont;
         private static readonly Dictionary<string,Sprite> gameSprites=
             new Dictionary<string,Sprite>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string,Sprite> flagSprites=new Dictionary<string,Sprite>(StringComparer.OrdinalIgnoreCase);
         private static TextMeshProUGUI statusLabel, moneyLabel, subtitleLabel, closeCaption;
         // Preserve managed delegates for the entire lifetime of the native panel.
         // Unity's IL2CPP UnityEvent may otherwise call a collected delegate.
@@ -115,7 +118,7 @@ namespace CanEmAllMod
                 {
                     nextRefresh=Time.realtimeSinceStartup+.5f;
                     if(statusLabel!=null)statusLabel.text=Localization.Tr(string.IsNullOrEmpty(status)
-                        ?"TOUCHE ²  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT":status);
+                        ?"TOUCHE \u00B2 / F8  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT":status);
                 }
                 if(retiredCallbacks.Count>0 && Time.realtimeSinceStartup>=retireCallbacksAt)
                     retiredCallbacks.Clear();
@@ -209,12 +212,7 @@ namespace CanEmAllMod
             // CPU texture reads, Texture2D allocation or custom art is needed.
             // Only once per scene, never in a page redraw or callback.
             gameSprites.Clear();
-            string[] names={
-                "PABLO_hope","creature_icon","logo_food_corp","main_menu2",
-                "can","can2","slotdragon","slotwater","slotplant","slotcorp",
-                "moneyui","money","gun","ak47","Uzi","ChainSaw","bat","knife",
-                "punch","suckyui","suckyui_selector","skilltreeicon","gamblingicon","settings"
-            };
+            // Load every official sprite by exact name, not a restricted subset.
             try
             {
                 var loaded=Resources.FindObjectsOfTypeAll(Il2CppType.Of<Sprite>());
@@ -223,14 +221,78 @@ namespace CanEmAllMod
                     var item=loaded[i];
                     if(item==null)continue;
                     string key=item.name;
-                    if(Array.IndexOf(names,key)<0 && !Array.Exists(names,n=>string.Equals(n,key,StringComparison.OrdinalIgnoreCase)))
-                        continue;
                     var sprite=item.TryCast<Sprite>();
                     if(sprite!=null && !gameSprites.ContainsKey(key))gameSprites[key]=sprite;
                 }
                 MelonLogger.Msg("NATIVE_GAME_SPRITES_READY="+gameSprites.Count);
+                string[] requiredIcons={"profile","creature_icon","can2","gun","Critic","sun","Turret",
+                    "skilltreeicon","save","gamblingicon","ak47","Uzi","ChainSaw","bat","knife",
+                    "suckyui_selector","shotgun","Rocketlauncher","Flamethrower","punch"};
+                int missing=0;
+                foreach(string required in requiredIcons)
+                {
+                    if(gameSprites.ContainsKey(required))continue;
+                    missing++;
+                    MelonLogger.Warning("NATIVE_MISSING_OFFICIAL_ICON="+required);
+                }
+                MelonLogger.Msg("NATIVE_OFFICIAL_ICON_CHECK="+(requiredIcons.Length-missing)+"/"+requiredIcons.Length);
             }
             catch(Exception ex){MelonLogger.Warning("Native sprites unavailable: "+ex.GetBaseException().Message);}
+        }
+
+        private static Sprite FlagSprite(string language)
+        {
+            if(flagSprites.TryGetValue(language,out Sprite found))return found;
+            try
+            {
+                using(var stream=Assembly.GetExecutingAssembly().GetManifestResourceStream("CanEmAllMod.flag-"+language+".rgba"))
+                {
+                    if(stream==null)return null;
+                    byte[] pixels=new byte[stream.Length];
+                    int read=0;
+                    while(read<pixels.Length)
+                    {
+                        int next=stream.Read(pixels,read,pixels.Length-read);
+                        if(next==0)break;
+                        read+=next;
+                    }
+                    if(read!=pixels.Length || read<4)return null;
+                    int width=pixels[0] | pixels[1]<<8;
+                    int height=pixels[2] | pixels[3]<<8;
+                    if(width<1 || height<1 || read!=4+width*height*4)return null;
+                    var texture=new Texture2D(width,height,TextureFormat.RGBA32,false);
+                    int offset=4;
+                    for(int y=0;y<height;y++)
+                    {
+                        for(int x=0;x<width;x++)
+                        {
+                            float red=pixels[offset++]/255f;
+                            float green=pixels[offset++]/255f;
+                            float blue=pixels[offset++]/255f;
+                            float alpha=pixels[offset++]/255f;
+                            texture.SetPixel(x,height-1-y,new Color(red,green,blue,alpha));
+                        }
+                    }
+                    texture.Apply();
+                    var sprite=Sprite.Create(texture,new Rect(0,0,width,height),new Vector2(.5f,.5f),100f);
+                    flagSprites[language]=sprite;
+                    return sprite;
+                }
+            }
+            catch(Exception ex)
+            {
+                MelonLogger.Warning("Flag "+language+": "+ex.GetBaseException().Message);
+                return null;
+            }
+        }
+        private static void FlagIcon(Transform parent,string language,float x,float y)
+        {
+            var sprite=FlagSprite(language);
+            if(sprite==null)return;
+            var img=Panel(parent,"Flag "+language,x,y,26,18,White);
+            img.sprite=sprite;
+            img.preserveAspect=true;
+            img.raycastTarget=false;
         }
         private static Image GameIcon(Transform parent,string name,string spriteName,
                                      float x,float y,float w,float h,Color? tint=null)
@@ -260,7 +322,13 @@ namespace CanEmAllMod
             if(n.Contains("baseball")||n.Contains("bat"))return "bat";
             if(n.Contains("knife"))return "knife";
             if(n.Contains("vacuum"))return "suckyui_selector";
-            return "";
+            if(n.Contains("shot"))return "shotgun";
+            if(n.Contains("rocket")||n.Contains("launcher"))return "Rocketlauncher";
+            if(n.Contains("flame")||n.Contains("firethrower"))return "Flamethrower";
+            if(n.Contains("pistol")||n.Contains("gun"))return "gun";
+            if(n.Contains("punch")||n.Contains("fist"))return "punch";
+            if(n.Contains("turret"))return "Turret";
+            return "gun";
         }
         private static TextMeshProUGUI Text(Transform parent,string name,string text,float x,float y,float w,float h,
                                            int size=16,bool strong=false,Color? color=null,bool centered=false)
@@ -300,11 +368,25 @@ namespace CanEmAllMod
                 caption.fontSizeMax=13;
                 caption.enableWordWrapping=false;
                 caption.overflowMode=TextOverflowModes.Ellipsis;
+                if(name.StartsWith("Enemy ",StringComparison.Ordinal)||
+                   name.StartsWith("Weapon ",StringComparison.Ordinal))
+                {
+                    caption.rectTransform.anchoredPosition=new Vector2(18,0);
+                    caption.rectTransform.sizeDelta=new Vector2(w-78,h-4);
+                }
+                if(name=="Locale EN"||name=="Locale FR")
+                {
+                    caption.rectTransform.anchoredPosition=new Vector2(13,0);
+                    caption.rectTransform.sizeDelta=new Vector2(w-39,h-4);
+                    caption.fontSize=12;
+                    caption.fontSizeMax=12;
+                }
             }
             if(name=="Locale EN"||name=="Locale FR")
             {
                 languageButtonBackgrounds.Add(image);
                 languageButtonLabels.Add(caption);
+                FlagIcon(image.transform,name=="Locale EN"?"en":"fr",-w*.5f+19,0);
             }
             if(name.StartsWith("Tab ",StringComparison.Ordinal))
             {
@@ -321,12 +403,12 @@ namespace CanEmAllMod
         private static Slider Range(Transform parent,string name,string title,float x,float y,float w,
                                     float low,float high,float initial,Action<float> onChange,string prefix="")
         {
-            Text(parent,name+" caption",title,-420,y+10,240,28,15);
+            Text(parent,name+" caption",title,-412,y+10,240,28,15);
             var number=Text(parent,name+" value",prefix+initial.ToString("0.0",I),354,y+10,84,28,15,true,null,true);
-            var go=RectObject(name+" slider",parent,55,y+7,475,32);
+            var go=RectObject(name+" slider",parent,75,y+7,445,32);
             var slider=Add<Slider>(go);
             slider.minValue=low;slider.maxValue=high;slider.wholeNumbers=false;
-            Panel(go.transform,"Track",0,0,464,6,new Color(.35f,.35f,.35f,1));
+            Panel(go.transform,"Track",0,0,432,6,new Color(.35f,.35f,.35f,1));
             // No Image for Slider.fillRect: the former stretched white Fill
             // obscured entire UI rows. A thin track and a thumb are sufficient.
             var handle=Panel(go.transform,"Handle",0,0,16,23,Accent,true);
@@ -377,13 +459,13 @@ namespace CanEmAllMod
                 GameIcon(window.transform,"Game emblem","PABLO_hope",-449,285,46,46);
                 Text(window.transform,"Title","Can 'Em All",-411,289,380,48,26,true);
                 subtitleLabel=Text(window.transform,"Subtitle","TRAINER  /  VERSION COMPLETE",-410,259,420,23,12,false,TextGray);
-                ActionButton(window.transform,"Locale EN","EN",250,288,50,35,()=>{
+                ActionButton(window.transform,"Locale EN","English",151,288,114,35,()=>{
                     SetLanguage("en");
                 },Localization.English);
-                ActionButton(window.transform,"Locale FR","FR",316,288,50,35,()=>{
+                ActionButton(window.transform,"Locale FR","Français",278,288,114,35,()=>{
                     SetLanguage("fr");
                 },!Localization.English);
-                ActionButton(window.transform,"Close","FERMER",421,288,115,37,()=>closeMenu?.Invoke());
+                ActionButton(window.transform,"Close","FERMER",427,288,113,37,()=>closeMenu?.Invoke());
                 Panel(window.transform,"Divider",0,198,968,1,Hover);
                 for(int i=0;i<Tabs.Length;i++)
                 {
@@ -396,7 +478,7 @@ namespace CanEmAllMod
                     navigationButtons.Add(nav);
                 }
                 Panel(window.transform,"Footer line",0,-287,968,1,Hover);
-                statusLabel=Text(window.transform,"Status","TOUCHE ²  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT",
+                statusLabel=Text(window.transform,"Status","TOUCHE \u00B2 / F8  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT",
                                  -467,-312,935,27,12,false,TextGray);
                 var co=RectObject("Page content",window.transform,0,-26,960,480);
                 content=co;
@@ -424,7 +506,7 @@ namespace CanEmAllMod
         {
             status=msg;
             if(statusLabel!=null)statusLabel.text=Localization.Tr(string.IsNullOrEmpty(msg)
-                ?"TOUCHE ²  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT":msg);
+                ?"TOUCHE \u00B2 / F8  /  REGLAGES SAUVEGARDES AUTOMATIQUEMENT":msg);
         }
         private static void SetLanguage(string language)
         {
@@ -453,13 +535,29 @@ namespace CanEmAllMod
         }
         private static void Head(string title,string sub="")
         {
-            Text(content.transform,"Heading",title,-350,193,735,44,24,true);
-            if(!string.IsNullOrEmpty(sub))Text(content.transform,"Description",sub,-350,157,790,28,13,false,TextGray);
+            string iconName;
+            switch(title)
+            {
+                case "Joueur": iconName="profile";break;
+                case "Creatures": iconName="creature_icon";break;
+                case "Canettes": iconName="can2";break;
+                case "Arsenal": iconName="gun";break;
+                case "Probabilites": iconName="Critic";break;
+                case "Monde": iconName="sun";break;
+                case "Equipement": iconName="Turret";break;
+                case "Progression": iconName="skilltreeicon";break;
+                case "Sauvegarde": iconName="save";break;
+                case "Casino": iconName="gamblingicon";break;
+                default: iconName="skilltreeicon";break;
+            }
+            GameIcon(content.transform,"Header icon",iconName,-421,193,35,35);
+            Text(content.transform,"Heading",title,-385,193,710,44,24,true);
+            if(!string.IsNullOrEmpty(sub))Text(content.transform,"Description",sub,-385,157,790,28,13,false,TextGray);
         }
         private static void Switch(string name,float y,Func<bool> read,Action change)
         {
             bool enabled=read();
-            Text(content.transform,name,name,-345,y,470,30,15);
+            Text(content.transform,name,name,-412,y,470,30,15);
             var toggle=ActionButton(content.transform,name+" Switch","",
                 356,y,104,33,()=>{change();needsBuild=true;});
             // Flat, native two-state switch, no invented graphic glyphs.
@@ -476,12 +574,12 @@ namespace CanEmAllMod
         }
         private static void Stepper(string name,float y,Func<int> read,Action<int> set,int low,int high)
         {
-            Text(content.transform,name,name,-370,y,390,30,15);
+            Text(content.transform,name,name,-412,y,390,30,15);
             ActionButton(content.transform,name+" minus","-",214,y,45,35,()=>{
                 set(Math.Max(low,read()-StepSize()));needsBuild=true;
             });
             Text(content.transform,name+" number",read().ToString(I),305,y,112,34,16,true,null,true);
-            ActionButton(content.transform,name+" plus","+",414,y,45,35,()=>{
+            ActionButton(content.transform,name+" plus","+",386,y,45,35,()=>{
                 set(Math.Min(high,read()+StepSize()));needsBuild=true;
             });
         }
@@ -489,7 +587,7 @@ namespace CanEmAllMod
         {
             float original=TrainerSettings.Chances.TryGetValue(key,out float val)?val:.35f;
             float current=original;
-            Text(content.transform,key+" head",title,-430,y,240,31,15);
+            Text(content.transform,key+" head",title,-412,y,255,31,15);
             var output=Text(content.transform,key+" percent",
                 TrainerSettings.Chances.ContainsKey(key)?(original*100f).ToString("0",I)+"%":"--",
                 345,y,85,30,15,true,null,true);
@@ -565,15 +663,15 @@ namespace CanEmAllMod
             var cash=MoneyManager.Instance;
             if(string.IsNullOrEmpty(moneyInput))
                 moneyInput=(TrainerSettings.PinnedMoney??(cash!=null?cash.Money:0)).ToString(I);
-            Text(content.transform,"Money caption","Argent",-410,95,220,30);
-            ActionButton(content.transform,"Money clickable field","",145,95,550,43,()=>{
+            Text(content.transform,"Money caption","Argent",-412,95,210,30);
+            ActionButton(content.transform,"Money clickable field","",52,95,418,43,()=>{
                 moneyEditing=true;
                 Array.Clear(KeyDown,0,KeyDown.Length);
                 Status("Chiffres, Ctrl+A/V, Retour, Entree pour appliquer.");
                 if(moneyLabel!=null)moneyLabel.text=moneyInput+"|";
             });
-            moneyLabel=Text(content.transform,"Money text",moneyInput,145,95,533,39,19,true,null,true);
-            ActionButton(content.transform,"Money apply","APPLIQUER",345,50,170,40,()=>{
+            moneyLabel=Text(content.transform,"Money text",moneyInput,52,95,406,39,19,true,null,true);
+            ActionButton(content.transform,"Money apply","APPLIQUER",337,95,145,43,()=>{
                 if(long.TryParse(moneyInput,NumberStyles.None,I,out long v))Status(NativeActions.SetMoney(v));
                 else Status("Montant invalide.");
             },true);
@@ -730,26 +828,28 @@ namespace CanEmAllMod
         private static void ProgressPage()
         {
             Head("Progression","Armes et arbre de recherche du jeu complet.");
-            Text(content.transform,"Research hint","Debloquer les competences disponibles.",-222,85,650,34);
+            Text(content.transform,"Research hint","Debloquer les competences disponibles.",-412,85,824,34);
             if(researchConfirm)
             {
-                ActionButton(content.transform,"Confirm research","CONFIRMER",-165,23,220,48,()=>{
+                ActionButton(content.transform,"Confirm research","CONFIRMER",-125,23,220,48,()=>{
                     researchConfirm=false;ActionResult(NativeActions.UnlockAllResearch,true);
                 },true);
-                ActionButton(content.transform,"Cancel research","ANNULER",165,23,220,48,()=>{
+                ActionButton(content.transform,"Cancel research","ANNULER",125,23,220,48,()=>{
                     researchConfirm=false;needsBuild=true;
                 });
             }
-            else ActionButton(content.transform,"Unlock research","TOUT DEBLOQUER",-50,23,460,49,()=>{
+            else ActionButton(content.transform,"Unlock research","TOUT DEBLOQUER",0,23,460,49,()=>{
                 researchConfirm=true;needsBuild=true;
             },true);
-            Text(content.transform,"Weapon hint","Debloquer toutes les armes.",-222,-92,650,32);
-            ActionButton(content.transform,"All weapons","TOUTES LES ARMES",-50,-155,460,48,
+            Text(content.transform,"Weapon hint","Debloquer toutes les armes.",-412,-54,824,32);
+            ActionButton(content.transform,"All weapons","TOUTES LES ARMES",0,-106,460,44,
                 ()=>ActionResult(NativeActions.UnlockAllWeapons),true);
+            ActionButton(content.transform,"Factory offer","RECEVOIR OFFRE USINE",0,-169,460,44,
+                ()=>ActionResult(NativeActions.SendFactoryOffer),true);
         }
         private static void SavePage()
         {
-            Head("Sauvegarde","Consultation des statistiques de la partie, sans modification de fichier.");
+            Head("Sauvegarde","Statistiques et succes de progression.");
             var save=SaveManager.Instance;
             var data=save!=null?save.CurrentSaveData:null;
             if(data==null){Text(content.transform,"Empty","Aucune sauvegarde chargee.",-320,70,620,35);return;}
@@ -757,17 +857,22 @@ namespace CanEmAllMod
             string[] values={data.day.ToString(I),data.money.ToString("N0",I),data.totalKilled.ToString(I),data.totalCans.ToString(I)};
             for(int i=0;i<labels.Length;i++)
             {
-                Text(content.transform,"Save "+i,labels[i],-325,92-i*62,245,35);
-                Text(content.transform,"Value "+i,values[i],241,92-i*62,285,35,17,true,null,true);
+                Text(content.transform,"Save "+i,labels[i],-412,92-i*62,330,35);
+                Text(content.transform,"Value "+i,values[i],272,92-i*62,265,35,17,true,null,true);
             }
+            ActionButton(content.transform,"Fed achievement","100 000 ENFANTS",0,-167,460,44,
+                ()=>ActionResult(NativeActions.SetChildrenFed100000,true),true);
         }
         private static void CasinoPage()
         {
             Head("Casino","Probabilites natives de la machine a sous.");
-            GameIcon(content.transform,"Casino art","gamblingicon",407,113,43,43);
+            // The same official casino icon is now displayed consistently in the header.
             if(!TrainerSettings.CasinoAvailable)
             {
-                Text(content.transform,"Unavailable","Machine indisponible dans cette scene.",0,52,690,40,16,false,null,true);
+                Text(content.transform,"Unavailable","Machine indisponible dans cette scene.",0,76,690,40,16,false,null,true);
+                Text(content.transform,"Mail hint","Ouvrez l'e-mail et cliquez ACCEPTER.",0,15,690,32,14,false,TextGray,true);
+                ActionButton(content.transform,"Casino email","RECEVOIR E-MAIL CASINO",0,-57,460,49,
+                    ()=>ActionResult(NativeActions.SendCasinoEmail),true);
                 return;
             }
             float win=TrainerSettings.Chances.TryGetValue("casino.win",out float customWin)
@@ -775,11 +880,13 @@ namespace CanEmAllMod
             float near=TrainerSettings.Chances.TryGetValue("casino.near",out float customNear)
                 ?customNear:TrainerSettings.CasinoObservedNear;
             PersistSlider("casino.win","Chance de gagner",94);
-            PersistSlider("casino.near","Quasi-gain",10);
+            PersistSlider("casino.near","Presque gagné (perdant)",10);
             Text(content.transform,"Machine state",TrainerSettings.CasinoSpinning?"Tirage en cours":"Machine au repos",
                 -202,-87,500,38,15,false,TextGray);
-            Text(content.transform,"Casino note","Les valeurs sont appliquees en dehors de l'interface.",
-                -202,-134,700,30,13,false,TextGray);
+            Text(content.transform,"Casino note","Presque gagné : un résultat perdant, pas un jackpot.",
+                -412,-134,824,30,13,false,TextGray);
+            ActionButton(content.transform,"Casino email available","RECEVOIR E-MAIL CASINO",0,-180,460,42,
+                ()=>ActionResult(NativeActions.SendCasinoEmail),true);
         }
         private static string Clipboard()
         {
