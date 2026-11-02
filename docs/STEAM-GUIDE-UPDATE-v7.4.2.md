@@ -11,9 +11,9 @@ An unofficial in-game trainer for Can 'Em All. Install with MelonLoader, open wi
 ## Section: Download
 
 ```text
-[b]Latest version: v7.4.2[/b]
+[b]Latest trainer: v7.4.2 (legacy link kept)[/b]
 
-[url=https://github.com/BreezeDelegate/can-em-all-trainer/releases/download/v7.4.2/CanEmAll-Trainer-v7.4.2-Windows.zip]Download the trainer (Windows ZIP)[/url]
+[url=https://github.com/BreezeDelegate/can-em-all-trainer/releases/download/v7.3.0/CanEmAll-Trainer-v7.3.0-Windows.zip]Download the trainer (Windows ZIP)[/url]
 
 [url=https://github.com/BreezeDelegate/can-em-all-trainer]Source code and release notes on GitHub[/url]
 

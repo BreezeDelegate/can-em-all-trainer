@@ -30,13 +30,15 @@ An unofficial **MelonLoader mod for the full Windows release of Can 'Em All**. I
 
 **Monde → Équipement** also offers turret ammo supply, vacuum capacity/throw rate and flamethrower range.
 
+**Steam guide download compatibility:** The existing v7.3.0 and v7.2.0 ZIP links both download the current v7.4.2 trainer. Old ZIP file names and Git tags are retained to avoid broken guide links. The source tag v7.4.2 remains available for source provenance.
+
 ## Installation
 
 **Requirements:** full Steam game on **Windows**, with **MelonLoader 0.7.3**. This mod does **not** target the separately released demo.
 
 1. Back up your game save before changing any progression.
 2. Install [MelonLoader 0.7.3](https://github.com/LavaGang/MelonLoader/releases/tag/v0.7.3) for the **full game's executable**. Run the game once and exit to initialize the loader.
-3. Download **[CanEmAll-Trainer-v7.4.2-Windows.zip](https://github.com/BreezeDelegate/can-em-all-trainer/releases/download/v7.4.2/CanEmAll-Trainer-v7.4.2-Windows.zip)**.
+3. Download **[current trainer v7.4.2, Steam-compatible download](https://github.com/BreezeDelegate/can-em-all-trainer/releases/download/v7.3.0/CanEmAll-Trainer-v7.3.0-Windows.zip)**.
 4. Extract the ZIP **into the game's root folder** (Steam → the game → Properties → Installed Files → Browse). The final file must be `<game folder>/Mods/CanEmAllFullMod.dll`.
 5. Start the game and press **F8** or the **physical key immediately below Esc** to open/close the trainer (² on French AZERTY keyboards, backtick/tilde on many QWERTY keyboards). Select **English** or **Français** beside Close.
 

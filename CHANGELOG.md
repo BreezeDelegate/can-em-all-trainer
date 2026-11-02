@@ -1,3 +1,7 @@
+## Compatibility links (2026-11-03)
+
+The earlier v7.2.0 and v7.3.0 release asset URLs now deliver the current v7.4.2 DLL so published Steam guide download links remain valid. Historical ZIP names and Git tags have not been changed; the updated release descriptions clearly identify the actual build. The duplicate v7.4.2 release entry is retired, while the v7.4.2 Git tag remains for source history.
+
 ## v7.4.2 (2026-11-03)
 
 - F8 opens and closes the trainer in addition to the original physical key below Esc.
